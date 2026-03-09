@@ -338,3 +338,218 @@ async function openIssueModal(issue) {
         showLoading(false);
     }
 }
+
+
+
+
+
+// close modal
+function closeIssueModal() {
+    issueModal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// handle tab Change
+function handleTabChange(e) {
+    const tab = e.target.dataset.tab;
+    if (!tab) return;
+
+    currentTab = tab;
+    currentPage = 1;
+
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    e.target.classList.add('active');
+
+    clearSearchInputs();
+    const query = '';
+    
+    if (query) {
+        handleSearch(query);
+    } else {
+        filteredIssues = filterIssuesByTab(allIssues, tab);
+        displayIssuesWithPagination();
+    }
+}
+
+// filter issues
+function filterIssuesByTab(issues, tab) {
+    if (!Array.isArray(issues)) return [];
+    
+    switch (tab) {
+        case 'all':
+            return issues;
+        case 'open':
+            return issues.filter(issue => issue.status === 'open');
+        case 'closed':
+            return issues.filter(issue => issue.status === 'closed');
+        default:
+            return issues;
+    }
+}
+
+// debounced search
+function debouncedSearch(query) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        handleSearch(query);
+    }, SEARCH_DEBOUNCE_DELAY);
+}
+
+// handle search
+async function handleSearch(query) {
+    query = query.trim();
+
+    if (!query) {
+        filteredIssues = filterIssuesByTab(allIssues, currentTab);
+        currentPage = 1;
+        displayIssuesWithPagination();
+        updateCounts();
+        return;
+    }
+
+    if (isSearching) return;
+
+    isSearching = true;
+    showLoading(true);
+    noResults.classList.add('hidden');
+    currentPage = 1;
+
+    try {
+        // Check cache first
+        if (searchCache[query]) {
+            const results = searchCache[query];
+            const filtered = filterIssuesByTab(results, currentTab);
+            filteredIssues = filtered;
+            
+            if (filtered.length === 0) {
+                noResultsMessage.textContent = `No results found for "${escapeHtml(query)}"`;
+                showNoResults();
+            } else {
+                displayIssuesWithPagination();
+            }
+            return;
+        }
+
+        const response = await fetch(`${API_BASE}/issues/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const result = await response.json();
+        if (result.status !== 'success') throw new Error('Invalid response');
+
+        const searchResults = result.data || [];
+        searchCache[query] = searchResults;
+
+        const filtered = filterIssuesByTab(searchResults, currentTab);
+        filteredIssues = filtered;
+
+        if (filtered.length === 0) {
+            noResultsMessage.textContent = `No ${currentTab === 'all' ? 'issues' : currentTab + ' issues'} found for "${escapeHtml(query)}"`;
+            showNoResults();
+        } else {
+            displayIssuesWithPagination();
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        noResultsMessage.textContent = `Search error: ${error.message}`;
+        showNoResults();
+    } finally {
+        isSearching = false;
+        showLoading(false);
+    }
+}
+
+
+// update issue counts
+function updateCounts() {
+    const total = allIssues.length;
+    const openCount = allIssues.filter(i => i.status === 'open').length;
+    const closedCount = allIssues.filter(i => i.status === 'closed').length;
+
+    if (currentTab === 'all') {
+        issueCount.textContent = filteredIssues.length;
+        issueBreakdown.textContent = `${openCount} Open · ${closedCount} Closed`;
+    } else if (currentTab === 'open') {
+        issueCount.textContent = filteredIssues.length;
+        issueBreakdown.textContent = `Open Issues`;
+    } else {
+        issueCount.textContent = filteredIssues.length;
+        issueBreakdown.textContent = `Closed Issues`;
+    }
+}
+
+
+// clear search
+function clearSearchInputs() {
+    searchInput.value = '';
+    searchInputMobile.value = '';
+}
+
+// show/hide loading
+function showLoading(show) {
+    if (show) {
+        loadingSpinner.classList.remove('hidden');
+    } else {
+        loadingSpinner.classList.add('hidden');
+    }
+}
+
+// show/hide skeleton
+function showSkeletonLoaders(show) {
+    if (show) {
+        loadingSkeleton.classList.remove('hidden');
+    } else {
+        loadingSkeleton.classList.add('hidden');
+    }
+}
+
+// show no results
+function showNoResults(message = 'No issues found') {
+    noResults.classList.remove('hidden');
+    if (message) {
+        noResultsMessage.textContent = message;
+    }
+    issuesGrid.innerHTML = '';
+    loadMoreContainer.classList.add('hidden');
+}
+
+// helper functions
+function getPriorityClass(priority) {
+    const upper = (priority || '').toUpperCase();
+    switch (upper) {
+        case 'HIGH': return 'badge-high';
+        case 'MEDIUM': return 'badge-medium';
+        case 'LOW': return 'badge-low';
+        default: return 'bg-gray-100 text-gray-700';
+    }
+}
+
+function getStatusClass(status) {
+    const lower = (status || '').toLowerCase();
+    switch (lower) {
+        case 'open': return 'badge-open';
+        case 'closed': return 'badge-closed';
+        default: return 'bg-gray-100 text-gray-700';
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) throw new Error();
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+        return 'N/A';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text || typeof text !== 'string') return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+
+
