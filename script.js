@@ -22,7 +22,6 @@ let searchCache = {};
 const loginPage = document.getElementById('loginPage');
 const mainPage = document.getElementById('mainPage');
 const loginForm = document.getElementById('loginForm');
-
 const issuesGrid = document.getElementById('issuesGrid');
 const loadingSpinner = document.getElementById('loadingSpinner');
 const loadingSkeleton = document.getElementById('loadingSkeleton');
@@ -32,14 +31,11 @@ const searchInput = document.getElementById('searchInput');
 const searchInputMobile = document.getElementById('searchInputMobile');
 const tabButtons = document.querySelectorAll('.tab-btn');
 const issueModal = document.getElementById('issueModal');
-const helpModal = document.getElementById('helpModal');
 const closeModal = document.getElementById('closeModal');
-const closeHelpModal = document.getElementById('closeHelpModal');
 const issueCount = document.getElementById('issueCount');
 const issueBreakdown = document.getElementById('issueBreakdown');
 const logoutBtn = document.getElementById('logoutBtn');
 const logoutBtnMobile = document.getElementById('logoutBtnMobile');
-const helpBtn = document.getElementById('helpBtn');
 const loadMoreBtn = document.getElementById('loadMoreBtn');
 const loadMoreContainer = document.getElementById('loadMoreContainer');
 
@@ -68,14 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal.addEventListener('click', closeIssueModal);
     issueModal.addEventListener('click', (e) => {
         if (e.target === issueModal) closeIssueModal();
-    });
-
-    closeHelpModal.addEventListener('click', () => {
-        helpModal.classList.add('hidden');
-    });
-
-    helpBtn.addEventListener('click', () => {
-        helpModal.classList.remove('hidden');
     });
 
     logoutBtn.addEventListener('click', handleLogout);
@@ -549,7 +537,4 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
-
-
-
 
