@@ -277,3 +277,64 @@ function createIssueCard(issue) {
 
 
 
+
+// Open Modal
+async function openIssueModal(issue) {
+    try {
+        document.body.style.overflow = 'hidden';
+        showLoading(true);
+
+        const response = await fetch(`${API_BASE}/issue/${issue.id}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const result = await response.json();
+        if (result.status !== 'success' || !result.data) {
+            throw new Error('Invalid response');
+        }
+
+        const fullIssue = result.data;
+        
+        // Status and Meta Info
+        const statusEl = document.getElementById('modalStatus');
+        statusEl.textContent = fullIssue.status.charAt(0).toUpperCase() + fullIssue.status.slice(1);
+        statusEl.className = `text-xs font-semibold px-3 py-1 rounded-full ${
+            fullIssue.status === 'open' ? 'is-open' : 'is-closed'
+        }`;
+
+        // Meta info: "Opened by Author • Date"
+        const metaEl = document.getElementById('modalMeta');
+        metaEl.textContent = `${fullIssue.status === 'open' ? 'Opened' : 'Closed'} by ${escapeHtml(fullIssue.author)} • ${formatDate(fullIssue.createdAt)}`;
+
+        // Title
+        document.getElementById('modalTitle').textContent = fullIssue.title;
+
+        // Description
+        document.getElementById('modalDescription').textContent = fullIssue.description;
+
+        // Assignee
+        document.getElementById('modalAssignee').textContent = fullIssue.assignee || 'Not assigned';
+
+        // Priority
+        const priorityClass = getPriorityClass(fullIssue.priority);
+        document.getElementById('modalPriority').innerHTML = 
+            `<span class="text-sm font-semibold px-3 py-1 rounded-full ${priorityClass}">${fullIssue.priority.toUpperCase()}</span>`;
+
+        // Labels
+        const labelsDiv = document.getElementById('modalLabels');
+        if (fullIssue.labels && fullIssue.labels.length > 0) {
+            labelsDiv.innerHTML = fullIssue.labels
+                .map(label => `<span class="text-xs font-semibold px-3 py-1 rounded-full badge-label">${escapeHtml(label).toUpperCase()}</span>`)
+                .join('');
+        } else {
+            labelsDiv.innerHTML = '';
+        }
+        
+        issueModal.classList.remove('hidden');
+        closeModal.focus();
+    } catch (error) {
+        console.error('Error:', error);
+        alert(`⚠️ Error: ${error.message}`);
+    } finally {
+        showLoading(false);
+    }
+}
