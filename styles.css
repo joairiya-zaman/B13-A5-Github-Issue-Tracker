@@ -93,3 +93,28 @@
     background-color: #dbeafe;
     color: #0c4a6e;
 }
+
+
+
+
+
+/* Tab Active State */
+.tab-btn.active {
+    color: #2563eb;
+    border-bottom: 2px solid #2563eb;
+}
+
+.tab-btn:not(.active) {
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:not(.active):hover {
+    border-bottom-color: #d1d5db;
+}
+
+/* Responsive Grid */
+@media (max-width: 576px) {
+    #issuesGrid {
+        grid-template-columns: 1fr;
+    }
+}
